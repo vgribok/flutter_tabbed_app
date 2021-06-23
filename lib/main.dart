@@ -35,10 +35,11 @@ class _NestedRouterDemoState extends State<NestedRouterDemo> {
 
 class BooksAppState extends ChangeNotifier {
   int _selectedIndex;
-
+  static const _defaultAppBarTitle = 'Welcome to Book sample!';
+  String _appBarTitle = _defaultAppBarTitle;
   Book? _selectedBook;
 
-  final List<Book> books = [
+  final List<Book> _books = [
     Book('Stranger in a Strange Land', 'Robert A. Heinlein'),
     Book('Foundation', 'Isaac Asimov'),
     Book('Fahrenheit 451', 'Ray Bradbury'),
@@ -46,9 +47,9 @@ class BooksAppState extends ChangeNotifier {
 
   BooksAppState() : _selectedIndex = 0;
 
-  int get selectedIndex => _selectedIndex;
+  int get selectedTabIndex => _selectedIndex;
 
-  set selectedIndex(int idx) {
+  set selectedTabIndex(int idx) {
     _selectedIndex = idx;
     if (_selectedIndex == 1) {
       // Remove this line if you want to keep the selected book when navigating
@@ -67,16 +68,23 @@ class BooksAppState extends ChangeNotifier {
   }
 
   int getSelectedBookById() {
-    if (!books.contains(_selectedBook)) return 0;
-    return books.indexOf(_selectedBook!);
+    if (!_books.contains(_selectedBook)) return 0;
+    return _books.indexOf(_selectedBook!);
   }
 
   void setSelectedBookById(int id) {
-    if (id < 0 || id > books.length - 1) {
+    if (id < 0 || id > _books.length - 1) {
       return;
     }
 
-    _selectedBook = books[id];
+    _selectedBook = _books[id];
+    notifyListeners();
+  }
+
+  String get appBarTitle => _appBarTitle;
+
+  set appBarTitle(String? appBarTitle) {
+    this._appBarTitle = appBarTitle ?? _defaultAppBarTitle;
     notifyListeners();
   }
 }
@@ -100,17 +108,8 @@ class BookRouteInformationParser extends RouteInformationParser<BookRoutePath> {
   }
 
   @override
-  RouteInformation? restoreRouteInformation(BookRoutePath configuration) {
-    if (configuration is BooksListPath) {
-      return RouteInformation(location: '/home');
-    }
-    if (configuration is BooksSettingsPath) {
-      return RouteInformation(location: '/settings');
-    }
-    if (configuration is BooksDetailsPath) {
-      return RouteInformation(location: '/book/${configuration.id}');
-    }
-    return null;
+  RouteInformation restoreRouteInformation(BookRoutePath configuration) {
+    return RouteInformation(location: configuration.location);
   }
 }
 
@@ -118,20 +117,20 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<BookRoutePath> {
   final GlobalKey<NavigatorState> navigatorKey;
 
-  BooksAppState appState = BooksAppState();
+  final _appState = BooksAppState();
 
   BookRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>() {
-    appState.addListener(notifyListeners);
+    _appState.addListener(notifyListeners);
   }
 
   BookRoutePath get currentConfiguration {
-    if (appState.selectedIndex == 1) {
+    if (_appState.selectedTabIndex == 1) {
       return BooksSettingsPath();
     } else {
-      if (appState.selectedBook == null) {
+      if (_appState.selectedBook == null) {
         return BooksListPath();
       } else {
-        return BooksDetailsPath(appState.getSelectedBookById());
+        return BooksDetailsPath(_appState.getSelectedBookById());
       }
     }
   }
@@ -142,7 +141,7 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
       key: navigatorKey,
       pages: [
         MaterialPage(
-          child: AppShell(appState: appState),
+          child: AppShell(appState: _appState),
         ),
       ],
       onPopPage: (route, result) {
@@ -150,8 +149,8 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
           return false;
         }
 
-        if (appState.selectedBook != null) {
-          appState.selectedBook = null;
+        if (_appState.selectedBook != null) {
+          _appState.selectedBook = null;
         }
         notifyListeners();
         return true;
@@ -162,27 +161,38 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
   @override
   Future<void> setNewRoutePath(BookRoutePath path) async {
     if (path is BooksListPath) {
-      appState.selectedIndex = 0;
-      appState.selectedBook = null;
+      _appState.selectedTabIndex = 0;
+      _appState.selectedBook = null;
     } else if (path is BooksSettingsPath) {
-      appState.selectedIndex = 1;
+      _appState.selectedTabIndex = 1;
     } else if (path is BooksDetailsPath) {
-      appState.setSelectedBookById(path.id);
+      _appState.setSelectedBookById(path.id);
     }
   }
 }
 
 // Routes
-abstract class BookRoutePath {}
+abstract class BookRoutePath {
+  String get location;
+}
 
-class BooksListPath extends BookRoutePath {}
+class BooksListPath extends BookRoutePath {
+  @override
+  String get location => '/home';
+}
 
-class BooksSettingsPath extends BookRoutePath {}
+class BooksSettingsPath extends BookRoutePath {
+  @override
+  String get location => '/settings';
+}
 
 class BooksDetailsPath extends BookRoutePath {
   final int id;
 
   BooksDetailsPath(this.id);
+
+  @override
+  String get location => '/book/$id';
 }
 
 // Widget that contains the AdaptiveNavigationScaffold
@@ -223,14 +233,14 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = widget.appState;
+    final appState = widget.appState;
 
     // Claim priority, If there are parallel sub router, you will need
     // to pick which one should take priority;
     _backButtonDispatcher?.takePriority();
 
     return Scaffold(
-      appBar: AppBar(title: Text('Welcome to Book sample')),
+      appBar: AppBar(title: Text(appState.appBarTitle)),
       body: Router(
         routerDelegate: _routerDelegate!,
         backButtonDispatcher: _backButtonDispatcher,
@@ -241,9 +251,9 @@ class _AppShellState extends State<AppShell> {
           BottomNavigationBarItem(
               icon: Icon(Icons.settings), label: 'Settings'),
         ],
-        currentIndex: appState.selectedIndex,
-        onTap: (newIndex) {
-          appState.selectedIndex = newIndex;
+        currentIndex: appState.selectedTabIndex,
+        onTap: (newTabIndex) {
+          appState.selectedTabIndex = newTabIndex;
         },
       ),
     );
@@ -251,10 +261,12 @@ class _AppShellState extends State<AppShell> {
 }
 
 class InnerRouterDelegate extends RouterDelegate<BookRoutePath>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<BookRoutePath> {
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<BookRoutePath>
+{
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  BooksAppState get appState => _appState;
+
   BooksAppState _appState;
+  BooksAppState get appState => _appState;
   set appState(BooksAppState value) {
     if (value == _appState) {
       return;
@@ -270,10 +282,10 @@ class InnerRouterDelegate extends RouterDelegate<BookRoutePath>
     return Navigator(
       key: navigatorKey,
       pages: [
-        if (appState.selectedIndex == 0) ...[
+        if (appState.selectedTabIndex == 0) ...[
           FadeAnimationPage(
             child: BooksListScreen(
-              books: appState.books,
+              books: appState._books,
               onTapped: _handleBookTapped,
             ),
             key: ValueKey('BooksListPage'),
