@@ -62,19 +62,7 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
           child: AppShell(appState: _appState),
         ),
       ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) {
-          return false;
-        }
-
-/*
-        if (_appState.selectedBook != null) {
-          _appState.selectedBook = null;
-        }
-        notifyListeners();
-*/
-        return true;
-      },
+      onPopPage: (route, result) => route.didPop(result),
     );
   }
 
@@ -181,10 +169,12 @@ class InnerRouterDelegate<TRoute> extends RouterDelegate<TRoute>
   Widget build(BuildContext context) {
 
     List<Page<dynamic>> pages = _homePage(appState);
+    var settingsPage = _settingsPage();
+
     if (appState.selectedTabIndex == 0)
-      pages.insert(0, _settingsPage());
+      pages.insert(0, settingsPage); // Last page in nav stack, "Home", will be shown
     else
-      pages.add(_settingsPage());
+      pages.add(settingsPage); // Last page in nav stack, "Settings" will be shown
 
     return Navigator(
       key: navigatorKey,
@@ -195,10 +185,17 @@ class InnerRouterDelegate<TRoute> extends RouterDelegate<TRoute>
           return false;
         }
 
-        //if(route is BookDetailsScreen) {
+        var page = route.settings as MaterialPage;
+
+        // TODO: use OOP polymorphism instead of 'if type is'
+        if(page.child is BookDetailsScreen) {
           appState.selectedBook = null;
           notifyListeners();
-        //}
+        }
+        else {
+          appState.selectedTabIndex = 1 - appState.selectedTabIndex;
+          notifyListeners();
+        }
         return true;
       },
     );

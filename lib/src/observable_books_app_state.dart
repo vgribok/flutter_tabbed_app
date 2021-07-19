@@ -20,12 +20,6 @@ class ObservableBooksAppState extends ChangeNotifier {
 
   set selectedTabIndex(int idx) {
     _selectedTabIndex = idx;
-    if (_selectedTabIndex == 1) {
-      // Remove this line if you want to keep the selected book when navigating
-      // between "settings" and "home" which book was selected when Settings is
-      // tapped.
-      selectedBook = null;
-    }
     notifyListeners();
   }
 
