@@ -1,6 +1,6 @@
-import 'book_route_path.dart';
+import 'route_path.dart';
 
-class BooksListPath extends BookRoutePath {
+class BooksListPath extends RoutePath {
   @override
   String get location => '/home';
 

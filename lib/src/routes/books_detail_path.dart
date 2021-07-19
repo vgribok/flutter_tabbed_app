@@ -1,6 +1,6 @@
-import 'book_route_path.dart';
+import 'route_path.dart';
 
-class BooksDetailsPath extends BookRoutePath {
+class BooksDetailsPath extends RoutePath {
   final int id;
 
   BooksDetailsPath(this.id);

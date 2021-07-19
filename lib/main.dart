@@ -3,10 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:startup_namer/src/models/book.dart';
 import 'package:startup_namer/src/navigation/route_parsing_factory.dart';
-import 'package:startup_namer/src/routes/book_route_path.dart';
+import 'package:startup_namer/src/routes/route_path.dart';
 import 'package:startup_namer/src/routes/books_detail_path.dart';
 import 'package:startup_namer/src/routes/books_list_path.dart';
-import 'package:startup_namer/src/routes/books_settings_path.dart';
+import 'package:startup_namer/src/routes/settings_path.dart';
 import 'package:startup_namer/src/screens/book_details_screen.dart';
 import 'package:startup_namer/src/screens/books_list_screen.dart';
 import 'package:startup_namer/src/screens/settinsg_screen.dart';
@@ -36,8 +36,8 @@ class _NestedRouterDemoAppState extends State<NestedRouterDemoApp> {
   }
 }
 
-class BookRouterDelegate extends RouterDelegate<BookRoutePath>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<BookRoutePath> {
+class BookRouterDelegate extends RouterDelegate<RoutePath>
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<RoutePath> {
   final GlobalKey<NavigatorState> navigatorKey;
 
   final _appState = ObservableBooksAppState();
@@ -46,8 +46,8 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
     _appState.addListener(notifyListeners);
   }
 
-  BookRoutePath get currentConfiguration {
-    if (_appState.selectedTabIndex == 1) return BooksSettingsPath();
+  RoutePath get currentConfiguration {
+    if (_appState.selectedTabIndex == 1) return SettingsPath();
 
     return _appState.selectedBook == null ?
             BooksListPath() : BooksDetailsPath(_appState.getSelectedBookById());
@@ -67,7 +67,7 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
   }
 
   @override
-  Future<void> setNewRoutePath(BookRoutePath path) async {
+  Future<void> setNewRoutePath(RoutePath path) async {
 
     _appState.selectedTabIndex = path.selectedTabIndex;
     _appState.appBarTitle = path.appBarTitle;
@@ -111,7 +111,7 @@ class _AppShellState extends NavigableState<AppShell> {
   @override
   void initState() {
     super.initState();
-    _routerDelegate = InnerRouterDelegate<BookRoutePath>(widget.appState);
+    _routerDelegate = InnerRouterDelegate<RoutePath>(widget.appState);
   }
 
   @override
