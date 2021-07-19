@@ -14,15 +14,15 @@ import 'fade_animation_page.dart';
 import 'src/observable_books_app_state.dart';
 
 void main() {
-  runApp(NestedRouterDemo());
+  runApp(NestedRouterDemoApp());
 }
 
-class NestedRouterDemo extends StatefulWidget {
+class NestedRouterDemoApp extends StatefulWidget {
   @override
-  _NestedRouterDemoState createState() => _NestedRouterDemoState();
+  _NestedRouterDemoAppState createState() => _NestedRouterDemoAppState();
 }
 
-class _NestedRouterDemoState extends State<NestedRouterDemo> {
+class _NestedRouterDemoAppState extends State<NestedRouterDemoApp> {
   final BookRouterDelegate _routerDelegate = BookRouterDelegate();
   final RouteParsingFactory _routeInformationParser =  RouteParsingFactory();
 
@@ -67,10 +67,12 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
           return false;
         }
 
+/*
         if (_appState.selectedBook != null) {
           _appState.selectedBook = null;
         }
         notifyListeners();
+*/
         return true;
       },
     );
@@ -147,8 +149,7 @@ class _AppShellState extends NavigableState<AppShell> {
       bottomNavigationBar: BottomNavigationBar(
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
         ],
         currentIndex: appState.selectedTabIndex,
         onTap: (newTabIndex) {
@@ -159,8 +160,8 @@ class _AppShellState extends NavigableState<AppShell> {
   }
 }
 
-class InnerRouterDelegate<T> extends RouterDelegate<T>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<T>
+class InnerRouterDelegate<TRoute> extends RouterDelegate<TRoute>
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<TRoute>
 {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -178,38 +179,60 @@ class InnerRouterDelegate<T> extends RouterDelegate<T>
 
   @override
   Widget build(BuildContext context) {
+
+    List<Page<dynamic>> pages = _homePage(appState);
+    if (appState.selectedTabIndex == 0)
+      pages.insert(0, _settingsPage());
+    else
+      pages.add(_settingsPage());
+
     return Navigator(
       key: navigatorKey,
-      pages: [
-        if (appState.selectedTabIndex == 0) ...[
-          FadeAnimationPage(
-            child: BooksListScreen(
-              books: appState.books,
-              onTapped: _handleBookTapped,
-            ),
-            key: ValueKey('BooksListPage'),
-          ),
-          if (appState.selectedBook != null)
-            MaterialPage(
-              key: ValueKey(appState.selectedBook),
-              child: BookDetailsScreen(book: appState.selectedBook),
-            ),
-        ] else
-          FadeAnimationPage(
-            child: SettingsScreen(),
-            key: ValueKey('SettingsPage'),
-          ),
-      ],
+      pages: pages,
+
       onPopPage: (route, result) {
-        appState.selectedBook = null;
-        notifyListeners();
-        return route.didPop(result);
+        if(!route.didPop(result)) {
+          return false;
+        }
+
+        //if(route is BookDetailsScreen) {
+          appState.selectedBook = null;
+          notifyListeners();
+        //}
+        return true;
       },
     );
   }
 
+  Page<dynamic> _settingsPage() =>
+    MaterialPage(
+      child: SettingsScreen(),
+      key: ValueKey('SettingsPage'),
+    );
+
+  List<Page<dynamic>> _homePage(ObservableBooksAppState appState) {
+    List<Page<dynamic>> pages = [
+      MaterialPage(
+        child: BooksListScreen(
+          books: appState.books,
+          onTapped: _handleBookTapped,
+        ),
+        key: ValueKey('BooksListPage'),
+      )
+    ];
+
+    if (appState.selectedBook != null) {
+      pages.add(MaterialPage(
+        key: ValueKey(appState.selectedBook),
+        child: BookDetailsScreen(book: appState.selectedBook),
+      ));
+    }
+
+    return pages;
+  }
+
   @override
-  Future<void> setNewRoutePath(T path) async {
+  Future<void> setNewRoutePath(TRoute path) async {
     // This is not required for inner router delegate because it does not
     // parse route
     assert(false);
