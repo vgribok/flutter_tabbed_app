@@ -62,7 +62,7 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
 
   Book? _selectedBook;
 
-  List<Book> books = [
+  final List<Book> books = [
     Book('Stranger in a Strange Land', 'Robert A. Heinlein'),
     Book('Foundation', 'Isaac Asimov'),
     Book('Fahrenheit 451', 'Ray Bradbury'),
@@ -84,10 +84,10 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
           key: ValueKey('BooksListPage'),
           child: BooksListScreen(
             books: books,
-            onTapped: _handleBookTapped,
+            onTappedEvent: _handleBookTapped,
           ),
         ),
-        if (_selectedBook != null) BookDetailsPage(book: _selectedBook!)
+        if (_selectedBook != null) _bookDetailsPage(_selectedBook!) // BookDetailsPage(book: _selectedBook!)
       ],
       onPopPage: (route, result) {
         if (!route.didPop(result)) {
@@ -116,22 +116,28 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
   }
 }
 
-class BookDetailsPage extends Page {
-  final Book book;
-
-  BookDetailsPage({
-    required this.book,
-  }) : super(key: ValueKey(book));
-
-  Route createRoute(BuildContext context) {
-    return MaterialPageRoute(
-      settings: this,
-      builder: (BuildContext context) {
-        return BookDetailsScreen(book: book);
-      },
+MaterialPage _bookDetailsPage(Book book) =>
+    MaterialPage(
+      key: ValueKey(book),
+      child: BookDetailsScreen(book: book)
     );
-  }
-}
+
+// class BookDetailsPage extends Page {
+//   final Book book;
+//
+//   BookDetailsPage({
+//     required this.book,
+//   }) : super(key: ValueKey(book));
+//
+//   Route createRoute(BuildContext context) {
+//     return MaterialPageRoute(
+//       settings: this,
+//       builder: (BuildContext context) {
+//         return BookDetailsScreen(book: book);
+//       },
+//     );
+//   }
+// }
 
 class BookRoutePath {
   final int? id;
@@ -147,11 +153,11 @@ class BookRoutePath {
 
 class BooksListScreen extends StatelessWidget {
   final List<Book> books;
-  final ValueChanged<Book> onTapped;
+  final ValueChanged<Book> onTappedEvent;
 
   BooksListScreen({
     required this.books,
-    required this.onTapped,
+    required this.onTappedEvent,
   });
 
   @override
@@ -164,7 +170,7 @@ class BooksListScreen extends StatelessWidget {
             ListTile(
               title: Text(book.title),
               subtitle: Text(book.author),
-              onTap: () => onTapped(book),
+              onTap: () => onTappedEvent(book),
             )
         ],
       ),
@@ -198,7 +204,7 @@ class BookDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (book != null) ...[
+            ...[
               Text(book.title, style: Theme.of(context).textTheme.headline6),
               Text(book.author, style: Theme.of(context).textTheme.subtitle1),
             ],
