@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:startup_namer/better_change_notifier.dart';
 import 'models/book.dart';
 
-class ObservableBooksAppState extends ChangeNotifier {
+class ObservableBooksAppState extends BetterChangeNotifier {
   int _selectedTabIndex;
   static const _defaultAppBarTitle = 'Welcome to Book sample!';
   String _appBarTitle = _defaultAppBarTitle;
@@ -17,18 +18,10 @@ class ObservableBooksAppState extends ChangeNotifier {
   ObservableBooksAppState() : _selectedTabIndex = 0;
 
   int get selectedTabIndex => _selectedTabIndex;
-
-  set selectedTabIndex(int idx) {
-    _selectedTabIndex = idx;
-    notifyListeners();
-  }
+  set selectedTabIndex(int idx) => update(() => _selectedTabIndex = idx);
 
   Book? get selectedBook => _selectedBook;
-
-  set selectedBook(Book? book) {
-    _selectedBook = book;
-    notifyListeners();
-  }
+  set selectedBook(Book? book) => update(() => _selectedBook = book);
 
   int getSelectedBookById() {
     if (!_books.contains(_selectedBook)) return 0;
@@ -45,9 +38,5 @@ class ObservableBooksAppState extends ChangeNotifier {
   }
 
   String get appBarTitle => _appBarTitle;
-
-  set appBarTitle(String? appBarTitle) {
-    this._appBarTitle = appBarTitle ?? _defaultAppBarTitle;
-    notifyListeners();
-  }
+  set appBarTitle(String? appBarTitle) => update(() => this._appBarTitle = appBarTitle ?? _defaultAppBarTitle);
 }
