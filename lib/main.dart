@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:startup_namer/404_nav_screen.dart';
+import 'package:startup_namer/tab_nav_state.dart';
+import 'package:startup_namer/tabbed_nav_screen.dart';
 
 void main() {
   runApp(BooksApp());
@@ -18,7 +21,13 @@ class BooksApp extends StatefulWidget {
 
 class _BooksAppState extends State<BooksApp> {
   BookRouterDelegate _routerDelegate = BookRouterDelegate();
-  BookRouteInformationParser _routeInformationParser =  BookRouteInformationParser();
+  BetterRouterInfoParser _routeInformationParser =  BetterRouterInfoParser(
+    routeParsers: [
+      BookListPath.fromUri,
+      BookDetailPath.fromUri,
+      SettingsPath.fromUri
+    ]
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -30,73 +39,75 @@ class _BooksAppState extends State<BooksApp> {
   }
 }
 
-class BookRouteInformationParser extends RouteInformationParser<BookRoutePath> {
+typedef RoutePathFactory = RoutePath? Function(Uri);
+
+class BetterRouterInfoParser extends RouteInformationParser<RoutePath> {
+
+  final List<RoutePathFactory> routeParsers;
+
+  BetterRouterInfoParser({required this.routeParsers});
+
   @override
-  Future<BookRoutePath> parseRouteInformation(
-      RouteInformation routeInformation) async {
+  Future<RoutePath> parseRouteInformation(RouteInformation routeInformation) {
     final uri = Uri.parse(routeInformation.location!);
 
-    if (uri.pathSegments.length >= 2) {
-      var remaining = uri.pathSegments[1];
-      return BookRoutePath.details(int.tryParse(remaining)!);
-    } else {
-      return BookRoutePath.home();
+    for(RoutePathFactory routePathFactory in routeParsers) {
+      RoutePath? path = routePathFactory(uri);
+      if(path != null)
+        return Future.value(path);
     }
+
+    return Future.value(NotFoundRoutePath(uri: uri));
   }
 
   @override
-  RouteInformation? restoreRouteInformation(BookRoutePath path) {
-    if (path.isHomePage) {
-      return RouteInformation(location: '/');
-    }
-    if (path.isDetailsPage) {
-      return RouteInformation(location: '/book/${path.id}');
-    }
-    return null;
-  }
+  RouteInformation? restoreRouteInformation(RoutePath path) => path.routeInformation;
 }
 
-class BookRouterDelegate extends RouterDelegate<BookRoutePath>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<BookRoutePath> {
+class BookRouterDelegate extends RouterDelegate<RoutePath>
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<RoutePath> {
   final GlobalKey<NavigatorState> navigatorKey;
 
-  Book? _selectedBook;
+  BookRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>()
+  {
+    BooksListScreen.selectedBook.addListener(notifyListeners);
 
-  final List<Book> books = [
-    Book('Stranger in a Strange Land', 'Robert A. Heinlein'),
-    Book('Foundation', 'Isaac Asimov'),
-    Book('Fahrenheit 451', 'Ray Bradbury'),
-  ];
-
-  BookRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>();
-
-  BookRoutePath get currentConfiguration => _selectedBook == null
-      ? BookRoutePath.home()
-      : BookRoutePath.details(books.indexOf(_selectedBook!));
+    TabbedNavScreen.navState = TabNavState(tabs: [
+      TabInfo(id: 'Books', icon: Icons.home, title: 'Books'),
+      TabInfo(id: 'Settings', icon: Icons.settings, title: 'Settings')
+    ]);
+    TabbedNavScreen.navState!.addListener(notifyListeners);
+  }
 
   @override
   Widget build(BuildContext context) {
+
     return Navigator(
       key: navigatorKey,
-      // transitionDelegate: NoAnimationTransitionDelegate(),
+      //transitionDelegate: NoAnimationTransitionDelegate(),
       pages: [
-        MaterialPage(
-          key: ValueKey('BooksListPage'),
-          child: BooksListScreen(
-            books: books,
-            onTappedEvent: _handleBookTapped,
-          ),
-        ),
-        if (_selectedBook != null) _bookDetailsPage(_selectedBook!) // BookDetailsPage(book: _selectedBook!)
+        if(TabbedNavScreen.navState!.selectedTabIndex == 1)
+          SettingsScreen().page
+        else
+          ...[
+            BooksListScreen().page,
+            if (BooksListScreen.selectedBook.value != null)
+              BookDetailsScreen(book: BooksListScreen.selectedBook.value!).page
+          ],
+        if(TabbedNavScreen.navState!.notFoundUri != null)
+          UrlNotFoundScreen().page
       ],
       onPopPage: (route, result) {
         if (!route.didPop(result)) {
           return false;
         }
 
-        // Update the list of pages by setting _selectedBook to null
-        _selectedBook = null;
-        notifyListeners();
+        if(TabbedNavScreen.navState!.notFoundUri != null) {
+          TabbedNavScreen.navState!.notFoundUri = null;
+        }else {
+          // Update the list of pages by setting _selectedBook to null
+          BooksListScreen.selectedBook.value = null;
+        }
 
         return true;
       },
@@ -104,158 +115,186 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath>
   }
 
   @override
-  Future<void> setNewRoutePath(BookRoutePath path) async {
-    if (path.isDetailsPage) {
-      _selectedBook = books[path.id!];
+  RoutePath get currentConfiguration {
+    if(TabbedNavScreen.navState!.notFoundUri != null) {
+      return NotFoundRoutePath(uri: TabbedNavScreen.navState!.notFoundUri!);
     }
+
+    if(TabbedNavScreen.navState!.selectedTabIndex == 1) {
+      return SettingsPath();
+    }
+
+    return BooksListScreen.selectedBook.value == null
+        ? BookListPath() : BookDetailPath(BooksListScreen.selectedBookId);
   }
-
-  void _handleBookTapped(Book book) {
-    _selectedBook = book;
-    notifyListeners();
-  }
-}
-
-MaterialPage _bookDetailsPage(Book book) =>
-    MaterialPage(
-      key: ValueKey(book),
-      child: BookDetailsScreen(book: book)
-    );
-
-// class BookDetailsPage extends Page {
-//   final Book book;
-//
-//   BookDetailsPage({
-//     required this.book,
-//   }) : super(key: ValueKey(book));
-//
-//   Route createRoute(BuildContext context) {
-//     return MaterialPageRoute(
-//       settings: this,
-//       builder: (BuildContext context) {
-//         return BookDetailsScreen(book: book);
-//       },
-//     );
-//   }
-// }
-
-class BookRoutePath {
-  final int? id;
-
-  BookRoutePath.home() : id = null;
-
-  BookRoutePath.details(this.id);
-
-  bool get isHomePage => id == null;
-
-  bool get isDetailsPage => id != null;
-}
-
-class BooksListScreen extends StatelessWidget {
-  final List<Book> books;
-  final ValueChanged<Book> onTappedEvent;
-
-  BooksListScreen({
-    required this.books,
-    required this.onTappedEvent,
-  });
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Books')),
-      body: ListView(
-        children: [
-          for (var book in books)
-            ListTile(
-              title: Text(book.title),
-              subtitle: Text(book.author),
-              onTap: () => onTappedEvent(book),
-            )
-        ],
-      ),
-        bottomNavigationBar: BottomNavigationBar(
-          items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-          ],
-          // currentIndex: appState.selectedTabIndex,
-          onTap: (newTabIndex) {
-            // appState.selectedTabIndex = newTabIndex;
-          },
-        )
-    );
+  Future<void> setNewRoutePath(RoutePath path) => path.configureState();
+}
+
+class RoutePath {
+
+  final String resource;
+  String get location => '/$resource/';
+  final int navTabIndex;
+
+  RoutePath(this.navTabIndex, this.resource);
+
+  Future<void> configureState() {
+    TabbedNavScreen.navState!.selectedTabIndex = navTabIndex;
+    return Future.value();
+  }
+
+  RouteInformation? get routeInformation => RouteInformation(location: location);
+}
+
+class NotFoundRoutePath extends RoutePath {
+
+  final Uri uri;
+
+  NotFoundRoutePath({required this.uri}) : super(
+      TabbedNavScreen.navState!.selectedTabIndex, '404-page-not-found');
+
+  @override
+  Future<void> configureState() {
+    TabbedNavScreen.navState!.notFoundUri = uri;
+    return Future.value();
   }
 }
 
-class BookDetailsScreen extends StatelessWidget {
+class DetailsRoutePath<T> extends RoutePath {
+
+  final T id;
+
+  DetailsRoutePath(int navTabIndex, this.id, String path) : super(navTabIndex, path);
+
+  @override
+  String get location => '${super.location}$id';
+}
+
+class BookListPath extends RoutePath {
+  static const String resourceName = 'books';
+
+  BookListPath() : super(BooksListScreen.navTabIndex, resourceName);
+
+  static RoutePath? fromUri(Uri uri) =>
+    uri.path == '/' || (uri.pathSegments.length == 1 && uri.pathSegments[0] == resourceName) ? BookListPath() : null;
+
+  @override
+  Future<void> configureState() {
+    BooksListScreen.selectedBook.value = null;
+    return super.configureState();
+  }
+}
+
+class BookDetailPath extends DetailsRoutePath {
+
+  static final String resourceName = BookListPath.resourceName;
+
+  BookDetailPath(int bookId) : super(BookDetailsScreen.navTabIndex, bookId, resourceName);
+
+  static RoutePath? fromUri(Uri uri) {
+    if(uri.pathSegments.length == 2 && uri.pathSegments[0] == resourceName) {
+      int? bookId = int.tryParse(uri.pathSegments[1]);
+      if(bookId != null && BooksListScreen.isValidBookId(bookId)) {
+          return BookDetailPath(bookId);
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<void> configureState() {
+    BooksListScreen.selectedBook.value = BooksListScreen.books[id];
+    return super.configureState();
+  }
+}
+
+class SettingsPath extends RoutePath {
+  static const String resourceName = 'settings';
+  SettingsPath() : super(SettingsScreen.navTabIndex, resourceName);
+
+  static RoutePath? fromUri(Uri uri) =>
+    uri.pathSegments.length == 1 && uri.pathSegments[0] == resourceName ? SettingsPath() : null;
+}
+
+class BooksListScreen extends TabbedNavScreen {
+
+  static const int navTabIndex = 0;
+
+  static final ValueNotifier<Book?> selectedBook = ValueNotifier(null);
+
+  static int get selectedBookId => selectedBook.value == null ? -1 : books.indexOf(selectedBook.value!);
+  static set selectedBookId(int bookId) => selectedBook.value = books[bookId];
+
+  static final List<Book> books = [
+    Book('Stranger in a Strange Land', 'Robert A. Heinlein'),
+    Book('Foundation', 'Isaac Asimov'),
+    Book('Fahrenheit 451', 'Ray Bradbury'),
+  ];
+
+  BooksListScreen() : super(
+    pageTitle: 'Books',
+    tabIndex: navTabIndex
+  );
+
+  @override
+  Widget buildBody(BuildContext context) =>
+    ListView(
+      children: [
+        for (var book in books)
+          ListTile(
+            title: Text(book.title),
+            subtitle: Text(book.author),
+            onTap: () => selectedBook.value = book,
+          )
+      ]
+    );
+
+  static bool isValidBookId(int bookId) {
+    return bookId >= 0 && bookId < books.length;
+  }
+}
+
+class BookDetailsScreen extends TabbedNavScreen {
+  static const navTabIndex = 0;
+
   final Book book;
 
   BookDetailsScreen({
     required this.book,
-  });
+  }) : super(
+      pageTitle: book.title,
+      tabIndex: navTabIndex
+  );
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(book.title)),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ...[
-              Text(book.title, style: Theme.of(context).textTheme.headline6),
-              Text(book.author, style: Theme.of(context).textTheme.subtitle1),
-            ],
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+  ValueKey get key => ValueKey(book);
+
+  @override
+  Widget buildBody(BuildContext context) =>
+    Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...[
+          Text(book.title, style: Theme.of(context).textTheme.headline6),
+          Text(book.author, style: Theme.of(context).textTheme.subtitle1),
         ],
-        // currentIndex: appState.selectedTabIndex,
-        onTap: (newTabIndex) {
-          // appState.selectedTabIndex = newTabIndex;
-        },
-      )
+      ],
+    ),
     );
-  }
 }
 
-// class NoAnimationTransitionDelegate extends TransitionDelegate<void> {
-//   @override
-//   Iterable<RouteTransitionRecord> resolve({
-//     List<RouteTransitionRecord> newPageRouteHistory,
-//     Map<RouteTransitionRecord, RouteTransitionRecord>
-//     locationToExitingPageRoute,
-//     Map<RouteTransitionRecord, List<RouteTransitionRecord>>
-//     pageRouteToPagelessRoutes,
-//   }) {
-//     final results = <RouteTransitionRecord>[];
-//
-//     for (final pageRoute in newPageRouteHistory) {
-//       if (pageRoute.isWaitingForEnteringDecision) {
-//         pageRoute.markForAdd();
-//       }
-//       results.add(pageRoute);
-//     }
-//
-//     for (final exitingPageRoute in locationToExitingPageRoute.values) {
-//       if (exitingPageRoute.isWaitingForExitingDecision) {
-//         exitingPageRoute.markForRemove();
-//         final pagelessRoutes = pageRouteToPagelessRoutes[exitingPageRoute];
-//         if (pagelessRoutes != null) {
-//           for (final pagelessRoute in pagelessRoutes) {
-//             pagelessRoute.markForRemove();
-//           }
-//         }
-//       }
-//
-//       results.add(exitingPageRoute);
-//     }
-//     return results;
-//   }
-// }
+class SettingsScreen extends TabbedNavScreen {
+  static const int navTabIndex = 1;
+
+  SettingsScreen() : super(tabIndex: navTabIndex);
+
+  @override
+  Widget buildBody(BuildContext context) =>
+    Center(
+      child: Text('Settings screen'),
+    );
+}
