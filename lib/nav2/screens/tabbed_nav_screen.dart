@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:startup_namer/tab_nav_state.dart';
+import 'package:startup_namer/nav2/models/tab_nav_state.dart';
 
 typedef BodyBuilder = Widget Function(BuildContext);
 

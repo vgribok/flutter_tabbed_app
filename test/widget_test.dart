@@ -7,13 +7,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:startup_namer/src/two_layer_nav.dart';
+import 'package:startup_namer/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(NestedRouterDemoApp());
+    await tester.pumpWidget(BooksApp());
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
