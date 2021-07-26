@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:startup_namer/nav2/models/tab_nav_state.dart';
 import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 import 'package:startup_namer/src/models/book.dart';
 
@@ -9,9 +10,11 @@ class BookDetailsScreen extends TabbedNavScreen {
 
   BookDetailsScreen({
     required this.book,
+    required TabNavState navState
   }) : super(
-      pageTitle: book.title,
-      tabIndex: navTabIndex
+    pageTitle: book.title,
+    tabIndex: navTabIndex,
+    navState: navState
   );
 
   @override

@@ -9,13 +9,11 @@ class TabInfo {
 }
 
 class TabNavState extends ChangeNotifier {
-  final List<TabInfo> tabs;
+  final List<TabInfo> tabs = [];
   int _selectedTabIndex = 0;
   Uri? _404Uri;
 
-  TabNavState({required this.tabs, int selectedTabIndex = 0}) {
-    this.selectedTabIndex = selectedTabIndex;
-  }
+  static final TabNavState instance = TabNavState();
 
   int get selectedTabIndex => _selectedTabIndex;
   set selectedTabIndex(int selectedTabIndex) {

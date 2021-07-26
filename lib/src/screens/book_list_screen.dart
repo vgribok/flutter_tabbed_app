@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:startup_namer/nav2/models/tab_nav_state.dart';
 import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 import 'package:startup_namer/src/models/book.dart';
 
@@ -17,10 +18,12 @@ class BooksListScreen extends TabbedNavScreen {
     Book('Fahrenheit 451', 'Ray Bradbury'),
   ];
 
-  BooksListScreen() : super(
-      pageTitle: 'Books',
-      tabIndex: navTabIndex
-  );
+  BooksListScreen({required TabNavState navState}) :
+    super(
+        pageTitle: 'Books',
+        tabIndex: navTabIndex,
+        navState: navState
+    );
 
   @override
   Widget buildBody(BuildContext context) =>

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:startup_namer/nav2/models/tab_nav_state.dart';
 import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 
 class UrlNotFoundScreen extends TabbedNavScreen {
@@ -6,10 +7,11 @@ class UrlNotFoundScreen extends TabbedNavScreen {
   static String defaultMessage = 'Following URI is incorrect: ';
   static String defaultTitle = 'Resource not found';
 
-  UrlNotFoundScreen() :
+  UrlNotFoundScreen({required TabNavState navState}) :
     super(
       pageTitle: defaultTitle,
-      tabIndex: TabbedNavScreen.navState?.selectedTabIndex ?? 0,
+      tabIndex: navState.selectedTabIndex,
+      navState: navState
     );
 
   @override
@@ -24,7 +26,7 @@ class UrlNotFoundScreen extends TabbedNavScreen {
         children: [
           Text(defaultMessage),
           Text(
-              '\"${TabbedNavScreen.navState!.notFoundUri}\"',
+              '\"${navState.notFoundUri}\"',
               style: TextStyle(fontWeight: FontWeight.bold)
           )
         ])

@@ -1,16 +1,19 @@
+import 'package:startup_namer/nav2/models/tab_nav_state.dart';
 import 'package:startup_namer/nav2/routing/route_path.dart';
-import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 
 class NotFoundRoutePath extends RoutePath {
 
   final Uri uri;
 
-  NotFoundRoutePath({required this.uri}) : super(
-      TabbedNavScreen.navState!.selectedTabIndex, '404-page-not-found');
+  NotFoundRoutePath({required this.uri, required TabNavState navState}) :
+    super(navTabIndex: navState.selectedTabIndex,
+          navState: navState,
+          resource: '404-page-not-found'
+    );
 
   @override
   Future<void> configureState() {
-    TabbedNavScreen.navState!.notFoundUri = uri;
+    navState.notFoundUri = uri;
     return Future.value();
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:startup_namer/nav2/screens/404_nav_screen.dart';
 import 'package:startup_namer/nav2/models/tab_nav_state.dart';
-import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 import 'package:startup_namer/src/routing/book_details_path.dart';
 import 'package:startup_namer/src/routing/book_list_path.dart';
 import 'package:startup_namer/src/routing/settings_path.dart';
@@ -19,25 +18,41 @@ void main() {
 
 class BooksApp extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => _BooksAppState();
+  State<StatefulWidget> createState() => _BooksAppState(navState: TabNavState.instance);
 }
 
 class _BooksAppState extends State<BooksApp> {
-  BookRouterDelegate _routerDelegate = BookRouterDelegate();
-  NavAwareRouteInfoParser _routeInformationParser =  NavAwareRouteInfoParser(
-    routeParsers: [
-      BookListPath.fromUri,
-      BookDetailsPath.fromUri,
-      SettingsPath.fromUri
-    ]
-  );
+
+  final TabNavState navState;
+
+  BookRouterDelegate? _routerDelegate;
+  NavAwareRouteInfoParser? _routeInformationParser;
+
+  _BooksAppState({required this.navState}) {
+
+    navState.tabs.addAll([
+      TabInfo(id: 'Books', icon: Icons.home, title: 'Books'),
+      TabInfo(id: 'Settings', icon: Icons.settings, title: 'Settings')
+    ]);
+
+    _routeInformationParser = NavAwareRouteInfoParser(
+        navState: navState,
+        routeParsers: [
+          BookListPath.fromUri,
+          BookDetailsPath.fromUri,
+          SettingsPath.fromUri
+        ]
+    );
+
+    _routerDelegate = BookRouterDelegate(navState: navState);
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Books App',
-      routerDelegate: _routerDelegate,
-      routeInformationParser: _routeInformationParser,
+      routerDelegate: _routerDelegate!,
+      routeInformationParser: _routeInformationParser!,
     );
   }
 }
@@ -46,15 +61,12 @@ class BookRouterDelegate extends RouterDelegate<RoutePath>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<RoutePath> {
   final GlobalKey<NavigatorState> navigatorKey;
 
-  BookRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>()
+  final TabNavState navState;
+
+  BookRouterDelegate({required this.navState}) : navigatorKey = GlobalKey<NavigatorState>()
   {
     BooksListScreen.selectedBook.addListener(notifyListeners);
-
-    TabbedNavScreen.navState = TabNavState(tabs: [
-      TabInfo(id: 'Books', icon: Icons.home, title: 'Books'),
-      TabInfo(id: 'Settings', icon: Icons.settings, title: 'Settings')
-    ]);
-    TabbedNavScreen.navState!.addListener(notifyListeners);
+    navState.addListener(notifyListeners);
   }
 
   @override
@@ -64,24 +76,27 @@ class BookRouterDelegate extends RouterDelegate<RoutePath>
       key: navigatorKey,
       //transitionDelegate: NoAnimationTransitionDelegate(),
       pages: [
-        if(TabbedNavScreen.navState!.selectedTabIndex == 1)
-          SettingsScreen().page
+        if(navState.selectedTabIndex == 1)
+          SettingsScreen(navState: navState).page
         else
           ...[
-            BooksListScreen().page,
+            BooksListScreen(navState: navState).page,
             if (BooksListScreen.selectedBook.value != null)
-              BookDetailsScreen(book: BooksListScreen.selectedBook.value!).page
+              BookDetailsScreen(
+                  navState: navState,
+                  book: BooksListScreen.selectedBook.value!
+              ).page
           ],
-        if(TabbedNavScreen.navState!.notFoundUri != null)
-          UrlNotFoundScreen().page
+        if(navState.notFoundUri != null)
+          UrlNotFoundScreen(navState: navState).page
       ],
       onPopPage: (route, result) {
         if (!route.didPop(result)) {
           return false;
         }
 
-        if(TabbedNavScreen.navState!.notFoundUri != null) {
-          TabbedNavScreen.navState!.notFoundUri = null;
+        if(navState.notFoundUri != null) {
+          navState.notFoundUri = null;
         }else {
           // Update the list of pages by setting _selectedBook to null
           BooksListScreen.selectedBook.value = null;
@@ -94,16 +109,21 @@ class BookRouterDelegate extends RouterDelegate<RoutePath>
 
   @override
   RoutePath get currentConfiguration {
-    if(TabbedNavScreen.navState!.notFoundUri != null) {
-      return NotFoundRoutePath(uri: TabbedNavScreen.navState!.notFoundUri!);
+    if(navState.notFoundUri != null) {
+      return NotFoundRoutePath(uri: navState.notFoundUri!, navState: navState);
     }
 
-    if(TabbedNavScreen.navState!.selectedTabIndex == 1) {
-      return SettingsPath();
+    return routeFromState;
+  }
+
+  RoutePath get routeFromState {
+    if(navState.selectedTabIndex == 1) {
+      return SettingsPath(navState: navState);
     }
 
     return BooksListScreen.selectedBook.value == null
-        ? BookListPath() : BookDetailsPath(BooksListScreen.selectedBookId);
+        ? BookListPath(navState: navState) :
+          BookDetailsPath(bookId: BooksListScreen.selectedBookId, navState: navState);
   }
 
   @override

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:startup_namer/nav2/models/tab_nav_state.dart';
 import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 
 class SettingsScreen extends TabbedNavScreen {
   static const int navTabIndex = 1;
 
-  SettingsScreen() : super(tabIndex: navTabIndex);
+  SettingsScreen({required TabNavState navState}) :
+    super(tabIndex: navTabIndex, navState: navState);
 
   @override
   Widget buildBody(BuildContext context) =>
