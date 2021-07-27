@@ -41,7 +41,10 @@ class BookDetailsScreen extends TabbedNavScreen {
       );
 
   @override
-  void removeFromNavStackTop() => selectedBook.value = null;
+  void removeFromNavStackTop() {
+    super.removeFromNavStackTop();
+    selectedBook.value = null;
+  }
 
   @override
   RoutePath get routePath => BookDetailsPath(bookId: selectedBookId);

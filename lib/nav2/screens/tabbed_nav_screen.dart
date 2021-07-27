@@ -48,10 +48,7 @@ abstract class TabbedNavScreen extends StatelessWidget {
                 tabItemBuilder(this, context, tabInfo)
             ],
             currentIndex: navState.selectedTabIndex,
-            onTap: (newTabIndex) {
-              navState.notFoundUri = null;
-              navState.selectedTabIndex = newTabIndex;
-            },
+            onTap: (newTabIndex) => navState.setSelectedTabIndex(newTabIndex, byUser: true)
           )
       );
 
@@ -59,7 +56,7 @@ abstract class TabbedNavScreen extends StatelessWidget {
 
   TabbedNavScreen? get topScreen => null;
 
-  void removeFromNavStackTop() {}
+  void removeFromNavStackTop() => navState.adjustSelectedTabOnRoutePop(this);
 
   static BottomNavigationBarItem buildTabItem(TabbedNavScreen screen, BuildContext context, TabInfo tabInfo) =>
       BottomNavigationBarItem(icon: Icon(tabInfo.icon), label: tabInfo.title);
