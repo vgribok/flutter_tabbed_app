@@ -5,7 +5,7 @@ import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 import 'package:startup_namer/src/routing/settings_path.dart';
 
 class SettingsScreen extends TabbedNavScreen {
-  static const int navTabIndex = 1;
+  static const int navTabIndex = 2;
 
   SettingsScreen({required TabNavState navState}) :
     super(tabIndex: navTabIndex, navState: navState);

@@ -20,6 +20,6 @@ class RoutePath {
 
   RouteInformation? get routeInformation => RouteInformation(location: location);
 
-  T myState<T extends ChangeNotifier>(List<ChangeNotifier> stateItems) =>
+  T myState<T extends ChangeNotifier>(Iterable<ChangeNotifier> stateItems) =>
       stateItems.singleWhere((element) => element is T) as T;
 }

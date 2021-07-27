@@ -4,12 +4,17 @@ import 'package:startup_namer/nav2/models/tab_nav_state.dart';
 import 'package:startup_namer/nav2/routing/route_path.dart';
 
 typedef BodyBuilder = Widget Function(BuildContext);
+typedef TabItemBuilder = BottomNavigationBarItem Function(TabbedNavScreen, BuildContext, TabInfo);
+typedef AppBarBuilder = AppBar Function(TabbedNavScreen, BuildContext, String);
 
 abstract class TabbedNavScreen extends StatelessWidget {
 
   final String? _pageTitle;
   final int _tabIndex;
   final TabNavState navState;
+
+  static TabItemBuilder tabItemBuilder = buildTabItem;
+  static AppBarBuilder appBarBuilder = buildAppBar;
 
   TabbedNavScreen(
       {
@@ -35,12 +40,12 @@ abstract class TabbedNavScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Scaffold(
-          appBar: buildAppBar(context, pageTitle),
+          appBar: appBarBuilder(this, context, pageTitle),
           body: buildBody(context),
           bottomNavigationBar: BottomNavigationBar(
             items: [
               for(TabInfo tabInfo in navState.tabs)
-                buildTabItem(context, tabInfo)
+                tabItemBuilder(this, context, tabInfo)
             ],
             currentIndex: navState.selectedTabIndex,
             onTap: (newTabIndex) {
@@ -56,11 +61,9 @@ abstract class TabbedNavScreen extends StatelessWidget {
 
   void removeFromNavStackTop() {}
 
-  // TODO: replace with factory
-  BottomNavigationBarItem buildTabItem(BuildContext context, TabInfo tabInfo) =>
+  static BottomNavigationBarItem buildTabItem(TabbedNavScreen screen, BuildContext context, TabInfo tabInfo) =>
       BottomNavigationBarItem(icon: Icon(tabInfo.icon), label: tabInfo.title);
 
-  // TODO: replace with factory
-  AppBar buildAppBar(BuildContext context, String pageTitle) =>
+  static AppBar buildAppBar(TabbedNavScreen screen, BuildContext context, String pageTitle) =>
       AppBar(title: Text(pageTitle));
 }

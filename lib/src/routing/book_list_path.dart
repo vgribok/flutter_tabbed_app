@@ -14,10 +14,10 @@ class BookListPath extends RoutePath {
           resource: resourceName);
 
   static RoutePath? fromUri(Uri uri) =>
-      uri.path == '/' || (uri.nonEmptyPathSegments.length == 1 && uri.nonEmptyPathSegments[0] == resourceName) ?
+      uri.path == '/' || uri.isSingleSegmentPath(resourceName) ?
         BookListPath() : null;
 
-  ValueNotifier<Book?> selectedBook(List<ChangeNotifier> stateItems) =>
+  ValueNotifier<Book?> selectedBook(Iterable<ChangeNotifier> stateItems) =>
       myState<ValueNotifier<Book?>>(stateItems);
 
   @override

@@ -5,8 +5,10 @@ import 'package:startup_namer/nav2/routing/nav_aware_app_state.dart';
 import 'package:startup_namer/src/routing/book_details_path.dart';
 import 'package:startup_namer/src/routing/book_list_path.dart';
 import 'package:startup_namer/src/routing/settings_path.dart';
+import 'package:startup_namer/src/routing/user_profile_path.dart';
 import 'package:startup_namer/src/screens/book_list_screen.dart';
 import 'package:startup_namer/src/screens/settings_screen.dart';
+import 'package:startup_namer/src/screens/user_profile_screen.dart';
 
 // TODO: Rename root package
 void main() {
@@ -25,9 +27,10 @@ class _BooksAppState extends NavAwareAppState<BooksApp> {
       appTitle: 'Books App',
       navState: TabNavState.instance,
       tabs: [
-        // TODO: Add user/profile tab
         TabInfo(id: 'Books', icon: Icons.home, title: 'Books',
             rootScreenFactory: (nvState) => BooksListScreen(navState: nvState)),
+        TabInfo(id: 'User', icon: Icons.person, title: 'User',
+            rootScreenFactory: (nvState) => UserProfileScreen(navState: nvState)),
         TabInfo(id: 'Settings', icon: Icons.settings, title: 'Settings',
             rootScreenFactory: (nvState) => SettingsScreen(navState: nvState))
       ],
@@ -35,6 +38,7 @@ class _BooksAppState extends NavAwareAppState<BooksApp> {
       routeParsers: [
         BookListPath.fromUri,
         BookDetailsPath.fromUri,
+        UserProfilePath.fromUri,
         SettingsPath.fromUri
       ],
     );

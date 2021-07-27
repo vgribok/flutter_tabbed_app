@@ -31,7 +31,7 @@ class BookDetailsPath extends DetailsRoutePath {
     return null;
   }
 
-  ValueNotifier<Book?> selectedBook(List<ChangeNotifier> stateItems) =>
+  ValueNotifier<Book?> selectedBook(Iterable<ChangeNotifier> stateItems) =>
       myState<ValueNotifier<Book?>>(stateItems);
 
   @override
