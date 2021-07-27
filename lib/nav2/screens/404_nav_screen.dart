@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:startup_namer/nav2/models/tab_nav_state.dart';
+import 'package:startup_namer/nav2/routing/not_found_route_path.dart';
+import 'package:startup_namer/nav2/routing/route_path.dart';
 import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 
+typedef NotFoundScreenFactory = UrlNotFoundScreen Function(TabNavState navState);
+
 class UrlNotFoundScreen extends TabbedNavScreen {
+
+  static NotFoundScreenFactory notFoundScreenFactory = (navState) { return UrlNotFoundScreen(navState: navState);};
 
   static String defaultMessage = 'Following URI is incorrect: ';
   static String defaultTitle = 'Resource not found';
 
+  final Uri notFoundUri;
+
   UrlNotFoundScreen({required TabNavState navState}) :
+    notFoundUri = navState.notFoundUri!,
     super(
       pageTitle: defaultTitle,
       tabIndex: navState.selectedTabIndex,
       navState: navState
     );
-
-  @override
-  ValueKey get key => ValueKey('404-not-found-page');
 
   @override
   Widget buildBody(BuildContext context) =>
@@ -31,4 +37,10 @@ class UrlNotFoundScreen extends TabbedNavScreen {
           )
         ])
     );
+
+  @override
+  void removeFromNavStackTop() => navState.notFoundUri = null;
+
+  @override
+  RoutePath get routePath => NotFoundRoutePath(notFoundUri: notFoundUri, navTabIndex: tabIndex);
 }

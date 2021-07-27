@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:startup_namer/nav2/models/tab_nav_state.dart';
+import 'package:startup_namer/nav2/routing/route_path.dart';
 import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 import 'package:startup_namer/src/models/book.dart';
+import 'package:startup_namer/src/routing/book_list_path.dart';
+import 'package:startup_namer/src/screens/book_details_screen.dart';
 
 class BooksListScreen extends TabbedNavScreen {
 
@@ -41,4 +44,11 @@ class BooksListScreen extends TabbedNavScreen {
   static bool isValidBookId(int bookId) {
     return bookId >= 0 && bookId < books.length;
   }
+
+  @override
+  TabbedNavScreen? get topScreen =>
+      selectedBook.value == null ? null : BookDetailsScreen(selectedBook: selectedBook, selectedBookId: selectedBookId, navState: navState);
+
+  @override
+  RoutePath get routePath => BookListPath();
 }

@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:startup_namer/nav2/models/tab_nav_state.dart';
+import 'package:startup_namer/nav2/routing/route_path.dart';
 import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 import 'package:startup_namer/src/models/book.dart';
+import 'package:startup_namer/src/routing/book_details_path.dart';
 
 class BookDetailsScreen extends TabbedNavScreen {
   static const navTabIndex = 0;
 
-  final Book book;
+  final ValueNotifier<Book?> selectedBook;
+  final int selectedBookId;
 
   BookDetailsScreen({
-    required this.book,
+    required this.selectedBook,
+    required this.selectedBookId,
     required TabNavState navState
   }) : super(
-    pageTitle: book.title,
+    pageTitle: selectedBook.value!.title,
     tabIndex: navTabIndex,
     navState: navState
-  );
+  ){
+    if(selectedBook.value == null) throw Exception('A book must be selected to display its details');
+  }
 
-  @override
-  ValueKey get key => ValueKey(book);
+  Book get book => selectedBook.value!;
 
   @override
   Widget buildBody(BuildContext context) =>
@@ -34,4 +39,10 @@ class BookDetailsScreen extends TabbedNavScreen {
           ],
         ),
       );
+
+  @override
+  void removeFromNavStackTop() => selectedBook.value = null;
+
+  @override
+  RoutePath get routePath => BookDetailsPath(bookId: selectedBookId);
 }

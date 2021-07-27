@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:startup_namer/nav2/models/tab_info.dart';
+import 'package:startup_namer/nav2/screens/404_nav_screen.dart';
+import 'package:startup_namer/nav2/screens/tabbed_nav_screen.dart';
 
-class TabInfo {
-  final String id;
-  final IconData icon;
-  final String? title;
-
-  TabInfo ({required this.icon, this.title, required this.id});
-}
-
+// TODO: Add back arrow support for tab switching
 class TabNavState extends ChangeNotifier {
+
   final List<TabInfo> tabs = [];
   int _selectedTabIndex = 0;
-  Uri? _404Uri;
+  Uri? _notFoundUri;
 
   static final TabNavState instance = TabNavState();
 
@@ -29,11 +26,21 @@ class TabNavState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Uri? get notFoundUri => _404Uri;
+  Uri? get notFoundUri => _notFoundUri;
   set notFoundUri(Uri? uri) {
-    _404Uri = uri;
-    notifyListeners();
+    if(_notFoundUri != uri) {
+      _notFoundUri = uri;
+      notifyListeners();
+    }
   }
 
   TabInfo get selectedTab => tabs[selectedTabIndex];
+
+  Iterable<TabbedNavScreen> buildNavigatorScreenStack() sync* {
+    yield* selectedTab.screenStack(this);
+
+    if(notFoundUri != null) {
+      yield UrlNotFoundScreen.notFoundScreenFactory(this);
+    }
+  }
 }

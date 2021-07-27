@@ -8,8 +8,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startup_namer/main.dart';
+import 'package:startup_namer/nav2/utility/uri_extensions.dart';
 
 void main() {
+
+  test('URI path parsing', () {
+    var uri = Uri.parse('http://locahost:12345/books/');
+    expect(uri.nonEmptyPathSegments.length, 1);
+
+    uri = Uri.parse('http://locahost:12345/books');
+    expect(uri.nonEmptyPathSegments.length, 1);
+  });
+
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(BooksApp());
